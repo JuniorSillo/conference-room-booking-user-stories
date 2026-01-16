@@ -12,8 +12,10 @@ Core employee booking flow is fully usable. Admin dashboard is basic but not com
 | Story # | Outcome                  | Acceptance Criteria Met (Yes/No) |
 |---------|--------------------------|----------------------------------|
 | 1       | Fully Done               | Yes                              |
+| 3       | Fully Done               | Yes                              |
 | 4       | Fully Done               | Yes                              |
-| 5       | Fully Done               | Yes                              |
+| 8       | Fully Done               | Yes                              |
+
 
 ## Incomplete Stories
 
