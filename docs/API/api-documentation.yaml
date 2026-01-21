@@ -1,1 +1,376 @@
+openapi: 3.0.3
+info:
+  title: Conference Room Booking System API
+  description: |
+    This API provides endpoints for managing conference rooms, bookings, and checking availability in a corporate or event management system. 
+    It allows users to create, retrieve, and manage rooms and bookings securely. The API is designed for reliability and ease of integration, 
+    supporting features like real-time availability checks to prevent overlaps.
+    
+    Key domain: Conference room reservations for meetings, events, or workspaces.
+    
+    Authentication is required for all endpoints except public availability checks.
+  version: 1.0.0
+  contact:
+    name: API Support Team
+    email: support@conferencerooms.example.com
+    url: https://conferencerooms.example.com/support
 
+servers:
+  - url: https://staging.conferencerooms.example.com/api
+    description: Staging server for testing and development
+  - url: https://api.conferencerooms.example.com
+    description: Production server for live use
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT  # Tokens are JWTs for authentication
+
+  schemas:
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the room
+          example: "room-123"
+        name:
+          type: string
+          description: Name of the conference room
+          example: "Boardroom A"
+        capacity:
+          type: integer
+          description: Maximum number of people the room can hold
+          example: 10
+        location:
+          type: string
+          description: Physical location of the room
+          example: "Floor 5, Building HQ"
+        amenities:
+          type: array
+          items:
+            type: string
+          description: List of available amenities
+          example: ["projector", "whiteboard", "video conferencing"]
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the booking
+          example: "booking-456"
+        roomId:
+          type: string
+          description: ID of the booked room
+          example: "room-123"
+        userId:
+          type: string
+          description: ID of the user making the booking
+          example: "user-789"
+        startTime:
+          type: string
+          format: date-time
+          description: Start time of the booking (ISO 8601 format)
+          example: "2026-01-22T09:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          description: End time of the booking (ISO 8601 format)
+          example: "2026-01-22T10:00:00Z"
+        purpose:
+          type: string
+          description: Brief description of the booking purpose
+          example: "Team meeting"
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid request parameters"
+        details:
+          type: string
+          description: Additional error details (optional)
+          example: "Start time must be before end time"
+
+paths:
+  /rooms:
+    get:
+      summary: List all available rooms
+      description: Retrieves a list of all conference rooms.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response with list of rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new room
+      description: Adds a new conference room to the system.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Room'
+      responses:
+        '201':
+          description: Room created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '400':
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rooms/{roomId}:
+    get:
+      summary: Get details of a specific room
+      description: Retrieves details for a single room by ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the room
+      responses:
+        '200':
+          description: Successful response with room details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /bookings:
+    get:
+      summary: List all bookings
+      description: Retrieves a list of all bookings.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response with list of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new booking
+      description: Creates a new booking for a room, checking for availability.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Booking'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Bad request - e.g., time conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /bookings/{bookingId}:
+    get:
+      summary: Get details of a specific booking
+      description: Retrieves details for a single booking by ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the booking
+      responses:
+        '200':
+          description: Successful response with booking details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /availability:
+    get:
+      summary: Check room availability
+      description: Checks if a room is available for a given time range (public endpoint, no auth required for basic checks).
+      parameters:
+        - name: roomId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID of the room to check
+        - name: startTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: Start time to check (ISO 8601)
+        - name: endTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: End time to check (ISO 8601)
+      responses:
+        '200':
+          description: Availability status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                    example: true
+                  conflictingBookings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /availability/room/{roomId}:
+    get:
+      summary: Get full availability for a room on a specific day
+      description: Retrieves available time slots for a room on a given date.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the room
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Date to check (YYYY-MM-DD)
+      responses:
+        '200':
+          description: List of available time slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    startTime:
+                      type: string
+                      format: date-time
+                    endTime:
+                      type: string
+                      format: date-time
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+security:
+  - bearerAuth: []  # Global security, can be overridden per endpoint
