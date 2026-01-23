@@ -15,7 +15,7 @@ Goal: Show a new developer can clone, run, understand, and test the system in mi
    (Wait for "Server running on port 3000")
 
    ### Access the Application
-   - Swagger UI: http://localhost:3000/api-docs (if implemented)  
+   - Swagger UI: http://localhost:3000/api-docs
    - Or Postman collection for API testing  
 
    ### Port Explanation
